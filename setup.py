@@ -21,7 +21,7 @@ setup(
     version='0.1',
     description="Python wrapper for Quantopian's Aqueduct API",
     author="Quantopian",
-    author_email="opensource@quantopian.com",
+    author_email="support@quantopian.com",
     packages=find_packages(),
     long_description=long_description,
     license='Apache 2.0',
