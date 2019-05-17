@@ -30,7 +30,7 @@ are several ways to use it:
 
 2) Use an environment variable: set ``QUANTOPIAN_API_KEY`` to your API key.
 
-3) Pass your API key directly into the ``AqueductClient`` constructor using the ``api_key`` kwarg.
+3) Pass your API key directly into the ``create_client`` method (see below) using the ``api_key`` kwarg.
 
 
 Usage
