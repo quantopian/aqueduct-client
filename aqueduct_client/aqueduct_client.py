@@ -259,11 +259,10 @@ class AqueductClient(object):
 
         return response.json()
 
-    def _get(self, path, body):
+    def _get(self, path):
         return requests.get(
             self._base_url + path,
             headers={'Quantopian-API-Key': self._api_key},
-            params=body,
         )
 
     def _post(self, path, body):
