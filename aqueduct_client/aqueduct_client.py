@@ -63,7 +63,7 @@ class AqueductClient(object):
         list
             A list of all the pipeline executions you have run.  Each execution
             is represented by a dict with id, start_date, end_date, created_at,
-            status, and otherproperties. See `get_pipeline_execution` for
+            status, and other properties. See `get_pipeline_execution` for
             a sample dict.
         """
         response = self._get('')
