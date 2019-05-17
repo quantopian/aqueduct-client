@@ -190,7 +190,7 @@ class AqueductClient(object):
             that this pipeline used.
         """
         pipeline_status = self.get_pipeline_execution(execution_id)
-        if pipeline_status["status"] == "RUNNING":
+        if pipeline_status["status"] == "IN-PROGRESS":
             raise ValueError(
                 "Pipeline execution {execution_id} is still running!".format(
                     execution_id=execution_id
