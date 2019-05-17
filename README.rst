@@ -12,7 +12,7 @@ Installation
 
 .. code-block:: shell
 
-   $ pip install https://github.com/quantopian/aqueduct-client
+   $ pip install git+https://git@github.com/quantopian/aqueduct-client.git
 
 
 Configuration
