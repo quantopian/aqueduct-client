@@ -66,6 +66,6 @@ def normalize_date_input(date_like):
         raise ValueError("Could not parse date: {date}".format(date=date_like))
 
     if timestamp.normalize() != timestamp:
-        raise ValueError("Date {date} is not a date").format(date=date_like)
+        raise ValueError("Date {date} is not a date".format(date=date_like))
 
     return timestamp.date()
