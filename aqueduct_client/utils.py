@@ -1,5 +1,4 @@
 import os
-import logging
 
 import pandas as pd
 
@@ -51,7 +50,10 @@ def load_api_key():
     api_key = os.getenv("QUANTOPIAN_API_KEY", None)
 
     if api_key is None:
-        raise ValueError("No API key found!")
+        raise ValueError(
+            "No API key found in either ~/.quantopian/credentials "
+            "or in QUANTOPIAN_API_KEY environment variable!"
+        )
 
     return api_key
 

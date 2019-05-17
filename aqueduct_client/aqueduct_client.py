@@ -12,6 +12,7 @@ from .utils import (
     normalize_date_input,
 )
 
+
 def create_client(
     api_key=None,
     base_url="https://factset.quantopian.com/api/experimental/pipelines"
@@ -24,7 +25,7 @@ def create_client(
     api_key : str, optional
         The Quantopian API key to use.  If not given, we attempt
         to load the key from a credentials file (at ~/.quantopian/credentials
-        or %UserProfile%\.quantopian\credentials) or from an
+        or %UserProfile%\\.quantopian\\credentials) or from an
         environment variable called QUANTOPIAN_API_KEY.
 
     base_url : str, optional
@@ -62,10 +63,10 @@ class AqueductClient(object):
         list
             A list of all the pipeline executions you have run.  Each execution
             is represented by a dict with id, start_date, end_date, created_at,
-            status, and otherproperties. See `get_pipeline_execution` for 
+            status, and otherproperties. See `get_pipeline_execution` for
             a sample dict.
         """
-        response = self._get('', None)
+        response = self._get('')
         response.raise_for_status()
         pipelines = response.json()['pipelines']
         return pipelines
@@ -85,7 +86,7 @@ class AqueductClient(object):
             The metadata of the pipeline execution, containing id, start_date,
             end_date, created_at, status, and other properties.
 
-            A sample returned dictionary looks like this: 
+            A sample returned dictionary looks like this:
             {
                 "id": "5cdc808085835b718cdec77b"
                 'status': "SUCCESS",
@@ -99,7 +100,7 @@ class AqueductClient(object):
         """
         response = self._get('/{execution_id}'.format(
             execution_id=execution_id
-        ), None)
+        ))
         response.raise_for_status()
         pipeline = response.json()['pipeline']
         return pipeline
@@ -142,6 +143,14 @@ class AqueductClient(object):
         start_date = normalize_date_input(start_date)
         end_date = normalize_date_input(end_date)
 
+        if end_date <= start_date:
+            raise ValueError(
+                "end_date {end} must be after start_date {start}!".format(
+                    end=end_date,
+                    start=start_date
+                )
+            )
+
         if asset_identifier_format not in ("symbol", "sid", "fsym_region_id"):
             raise ValueError(
                 "Invalid asset_identifier_format, should be symbol, "
@@ -181,12 +190,15 @@ class AqueductClient(object):
         """
         pipeline_status = self.get_pipeline_execution(execution_id)
         if pipeline_status["status"] == "RUNNING":
-            raise ValueError("Pipeline execution {execution_id} is still running!".format(
-                execution_id=execution_id
-            ))
+            raise ValueError(
+                "Pipeline execution {execution_id} is still running!".format(
+                    execution_id=execution_id
+                )
+            )
         elif pipeline_status["status"] == "FAILED":
             raise ValueError(
-                "Pipeline {execution_id} ended in error, use `get_pipeline_execution_error` "
+                "Pipeline {execution_id} ended in error, use "
+                "`get_pipeline_execution_error` "
                 "to get its error message.".format(execution_id=execution_id)
             )
 
@@ -196,8 +208,9 @@ class AqueductClient(object):
         response = self._get('/{execution_id}/results_url'.format(
             base=self._base_url,
             execution_id=execution_id
-        ), None)
+        ))
 
+        response.raise_for_status()
         url = response.json()['url']
 
         # get the data from the url
@@ -233,7 +246,8 @@ class AqueductClient(object):
         pipeline_status = self.get_pipeline_execution(execution_id)
         if pipeline_status["status"] != "FAILED":
             raise ValueError(
-                "Pipeline execution {execution_id} did not end in error!".format(
+                "Pipeline execution {execution_id} did not end in "
+                "error!".format(
                     execution_id=execution_id
                 )
             )
@@ -241,27 +255,21 @@ class AqueductClient(object):
         # get the error
         response = self._get(
             '/{execution_id}/exception'.format(execution_id=execution_id),
-            None
         )
 
         response.raise_for_status()
 
         return response.json()
 
-    def _get(self, path, body, *args, **kwargs):
+    def _get(self, path):
         return requests.get(
             self._base_url + path,
-            *args,
             headers={'Quantopian-API-Key': self._api_key},
-            params=body,
-            **kwargs
         )
 
-    def _post(self, path, body, *args, **kwargs):
+    def _post(self, path, body):
         return requests.post(
             self._base_url + path,
-            *args,
             headers={'Quantopian-API-Key': self._api_key},
             json=body,
-            **kwargs
         )
