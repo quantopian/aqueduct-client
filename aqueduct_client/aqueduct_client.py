@@ -66,7 +66,7 @@ class AqueductClient(object):
             status, and otherproperties. See `get_pipeline_execution` for
             a sample dict.
         """
-        response = self._get('', None)
+        response = self._get('')
         response.raise_for_status()
         pipelines = response.json()['pipelines']
         return pipelines
@@ -100,7 +100,7 @@ class AqueductClient(object):
         """
         response = self._get('/{execution_id}'.format(
             execution_id=execution_id
-        ), None)
+        ))
         response.raise_for_status()
         pipeline = response.json()['pipeline']
         return pipeline
@@ -209,7 +209,7 @@ class AqueductClient(object):
         response = self._get('/{execution_id}/results_url'.format(
             base=self._base_url,
             execution_id=execution_id
-        ), None)
+        ))
 
         url = response.json()['url']
 
@@ -253,27 +253,22 @@ class AqueductClient(object):
         # get the error
         response = self._get(
             '/{execution_id}/exception'.format(execution_id=execution_id),
-            None
         )
 
         response.raise_for_status()
 
         return response.json()
 
-    def _get(self, path, body, *args, **kwargs):
+    def _get(self, path, body):
         return requests.get(
             self._base_url + path,
-            *args,
             headers={'Quantopian-API-Key': self._api_key},
             params=body,
-            **kwargs
         )
 
-    def _post(self, path, body, *args, **kwargs):
+    def _post(self, path, body):
         return requests.post(
             self._base_url + path,
-            *args,
             headers={'Quantopian-API-Key': self._api_key},
             json=body,
-            **kwargs
         )
