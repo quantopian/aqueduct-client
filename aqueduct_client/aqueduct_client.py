@@ -143,6 +143,15 @@ class AqueductClient(object):
         start_date = normalize_date_input(start_date)
         end_date = normalize_date_input(end_date)
 
+        if end_date < start_date:
+            raise ValueError(
+                "end_date ({end}) must be on or after start_date "
+                "({start})!".format(
+                    end=end_date,
+                    start=start_date
+                )
+            )
+
         if asset_identifier_format not in ("symbol", "sid", "fsym_region_id"):
             raise ValueError(
                 "Invalid asset_identifier_format, should be symbol, "
