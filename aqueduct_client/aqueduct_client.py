@@ -3,8 +3,9 @@ try:
 except ImportError:
     from io import StringIO
 
-import pandas as pd
+import os
 
+import pandas as pd
 import requests
 
 from .utils import (
@@ -15,7 +16,8 @@ from .utils import (
 
 def create_client(
     api_key=None,
-    base_url="https://factset.quantopian.com/api/experimental/pipelines"
+    base_url="https://factset.quantopian.com/api/experimental/pipelines",
+    ssl_cert_file_path=None,
 ):
     """
     Create an AqueductClient.
@@ -31,13 +33,25 @@ def create_client(
     base_url : str, optional
         The base URL for the Aqueduct API.  Defaults to the
         FactSet Aqueduct endpoint.
+
+    ssl_cert_file_path: str, optional
+        The local path of a SSL certificate needed to verify SSL requests.
     """
     if api_key is None:
         api_key = load_api_key()
 
+    if ssl_cert_file_path is not None:
+        if not os.path.isfile(ssl_cert_file_path):
+            raise ValueError(
+                "Invalid ssl_cert_file_path: {path}".format(
+                    path=ssl_cert_file_path
+                )
+            )
+
     return AqueductClient(
         api_key=api_key,
-        base_url=base_url
+        base_url=base_url,
+        ssl_cert_file_path=ssl_cert_file_path
     )
 
 
@@ -46,9 +60,14 @@ class AqueductClient(object):
     AqueductClient provides a convenient way to use Quantopian's
     Aqueduct API.
     """
-    def __init__(self, api_key, base_url):
+    def __init__(self, api_key, base_url, ssl_cert_file_path):
         self._base_url = base_url
         self._api_key = api_key
+        self._ssl_cert_file_path = ssl_cert_file_path
+
+        self._session = requests.Session()
+        if self._ssl_cert_file_path is not None:
+            self._session.verify = self._ssl_cert_file_path
 
     def get_all_pipeline_executions(self):
         """
@@ -214,7 +233,7 @@ class AqueductClient(object):
         url = response.json()['url']
 
         # get the data from the url
-        results_url_resp = requests.get(url)
+        results_url_resp = self._session.get(url)
 
         if results_url_resp.status_code != 200:
             raise ValueError("Could not download results from given url.")
@@ -260,13 +279,13 @@ class AqueductClient(object):
         return response.json()
 
     def _get(self, path):
-        return requests.get(
+        return self._session.get(
             self._base_url + path,
             headers={'Quantopian-API-Key': self._api_key},
         )
 
     def _post(self, path, body):
-        return requests.post(
+        return self._session.post(
             self._base_url + path,
             headers={'Quantopian-API-Key': self._api_key},
             json=body,
