@@ -3,14 +3,17 @@ try:
 except ImportError:
     from io import StringIO
 
-import pandas as pd
+import json
 
+import pandas as pd
 import requests
 
 from .utils import (
     load_api_key,
     normalize_date_input,
 )
+
+from .errors import ConcurrentExecutionsExceeded
 
 
 def create_client(
@@ -105,6 +108,28 @@ class AqueductClient(object):
         pipeline = response.json()['pipeline']
         return pipeline
 
+    def get_pipeline_execution_quota(self):
+        """
+        Returns the number of currently active (queued or running)
+        pipeline executions, and what the quota is.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        dict: A dictionary with the following keys:
+            running: int
+                The number of currently active pipeline executions.
+            maximum: int
+                The number of pipeline executions that are queued or
+                running.
+        """
+        response = self._get("/concurrent_executions_info")
+        response.raise_for_status()
+        return response.json()
+
     def submit_pipeline_execution(self,
                                   code,
                                   start_date,
@@ -168,7 +193,17 @@ class AqueductClient(object):
         }
 
         response = self._post('', args)
-        response.raise_for_status()
+
+        if response.status_code == 429:
+            # concurrent execution quota exceeded
+            data = json.loads(response.text)
+            raise ConcurrentExecutionsExceeded(
+                data["current"],
+                data["allowed"],
+            )
+        else:
+            response.raise_for_status()
+
         created_execution_id = response.json()['pipeline_id']
 
         return created_execution_id
