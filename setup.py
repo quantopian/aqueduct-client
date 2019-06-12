@@ -2,6 +2,8 @@
 from setuptools import setup, find_packages
 import sys
 
+import versioneer
+
 long_description = ''
 
 if 'upload' in sys.argv:
@@ -18,7 +20,8 @@ def install_requires():
 
 setup(
     name='aqueduct-client',
-    version='0.1',
+    cmdclass=versioneer.get_cmdclass(),
+    version=versioneer.get_version(),
     description="Python wrapper for Quantopian's Aqueduct API",
     author="Quantopian",
     author_email="support@quantopian.com",
