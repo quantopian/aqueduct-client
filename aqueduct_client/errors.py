@@ -21,3 +21,15 @@ class ConcurrentExecutionsExceeded(Exception):
                 current=self.current,
                 maximum=self.maximum,
             )
+
+class PipelineErrorException(Exception):
+    """
+    Indicates that the submitted pipline is in error state
+    """
+    pass
+
+class PipelineInProgressException(Exception):
+    """
+    Indicates that the submitted pipline is in progress
+    """
+    pass

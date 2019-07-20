@@ -7,13 +7,23 @@ import json
 
 import pandas as pd
 import requests
+from tenacity import (
+    Retrying,
+    wait_random_exponential,
+    stop_after_delay,
+    retry_if_exception_type
+)
 
 from .utils import (
     load_api_key,
     normalize_date_input,
 )
 
-from .errors import ConcurrentExecutionsExceeded
+from .errors import (
+    ConcurrentExecutionsExceeded,
+    PipelineErrorException,
+    PipelineInProgressException
+)
 
 
 def create_client(
@@ -226,13 +236,13 @@ class AqueductClient(object):
         """
         pipeline_status = self.get_pipeline_execution(execution_id)
         if pipeline_status["status"] == "IN-PROGRESS":
-            raise ValueError(
+            raise PipelineInProgressException(
                 "Pipeline execution {execution_id} is still running!".format(
                     execution_id=execution_id
                 )
             )
         elif pipeline_status["status"] == "FAILED":
-            raise ValueError(
+            raise PipelineErrorException(
                 "Pipeline {execution_id} ended in error, use "
                 "`get_pipeline_execution_error` "
                 "to get its error message.".format(execution_id=execution_id)
@@ -261,6 +271,27 @@ class AqueductClient(object):
         )
 
         return result_df
+
+    def submit_then_get_pipeline_execution(self,
+                                           timeout_seconds=60*5,
+                                           *args,
+                                           **kwargs):
+        """
+        Creates and queues a new pipeline execution. Then waits until
+        pipeline is completed and returns the result.
+
+        TODO Add more documentation here
+        """
+        execution_id = self.submit_pipeline_execution(*args, **kwargs)
+        request = {'execution_id': execution_id}
+        results_df = self._retry(
+            self.get_pipeline_results_dataframe,
+            timeout_seconds=timeout_seconds,
+            **request
+        )
+
+
+        return results_df
 
     def get_pipeline_execution_error(self, execution_id):
         """
@@ -306,3 +337,13 @@ class AqueductClient(object):
             headers={'Quantopian-API-Key': self._api_key},
             json=body,
         )
+
+    def _retry(self, func, timeout_seconds, *args, **kwargs):
+        retry = Retrying(
+            stop=stop_after_delay(timeout_seconds),
+            wait=wait_random_exponential(multiplier=1, max=60),
+            retry=retry_if_exception_type(PipelineInProgressException),
+            reraise=True
+        )
+
+        return retry(func, *args, **kwargs)

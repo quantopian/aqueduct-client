@@ -15,6 +15,7 @@ def install_requires():
     return [
         'pandas',
         'requests',
+        'tenacity',
     ]
 
 
