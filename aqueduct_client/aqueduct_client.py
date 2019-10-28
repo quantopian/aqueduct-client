@@ -136,7 +136,7 @@ class AqueductClient(object):
                                   end_date,
                                   name=None,
                                   params=None,
-                                  asset_identifier_format="symbol"):
+                                  asset_identifier_format="sid"):
         """
         Creates and queues a new pipeline execution.
 
@@ -153,7 +153,7 @@ class AqueductClient(object):
         params : dict, optional
             Input arguments for make_pipeline method defined in code.
         asset_identifier_format : str (optional)
-            The type of identifier used to uniquely identify a security.
+            The type of identifier used to identify a security.
             Valid options are "symbol", "sid", or "fsym_region_id".
 
         Returns
