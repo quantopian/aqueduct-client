@@ -36,7 +36,7 @@ are several ways to use it:
 Usage
 ~~~~~
 
-Note: Fuller documentation will be coming soon.
+Note: Fuller documentation is available at https://factset.quantopian.com/docs/user-guide/tools/aqueduct.
 
 To use ``AqueductClient``, create an instance. In this case, we are loading credentials from disk or environment variable.
 
@@ -46,7 +46,7 @@ To use ``AqueductClient``, create an instance. In this case, we are loading cred
 
   client = create_client()
 
-To run a new pipeline execution, use ``submit_pipeline_execution``.  Required parameters are ``code`` (string), ``start_date`` and ``end_date`` (date-like strings, dates, or Pandas timestamps).  Optional parameters are  ``name`` (string), ``params`` (a dict of parameters to pass to your pipeline), and ``asset_identifier_format`` (which can be "symbol" (default), "sid", and "fsym_region_id").  ``submit_pipeline_execution`` returns an id, which you can pass to ``get_pipeline_execution`` to monitor this pipeline's execution status.
+To run a new pipeline execution, use ``submit_pipeline_execution``.  Required parameters are ``code`` (string), ``start_date`` and ``end_date`` (date-like strings, dates, or Pandas timestamps).  Optional parameters are  ``name`` (string), ``params`` (a dict of parameters to pass to your pipeline), and ``asset_identifier_format`` (which can be "symbol", "sid", and "fsym_region_id").  ``submit_pipeline_execution`` returns an id, which you can pass to ``get_pipeline_execution`` to monitor this pipeline's execution status.
 
 
 ``get_all_pipeline_executions`` and ``get_pipeline_execution(id)`` let you load existing pipelines.  Each pipeline has a ``status`` field, which can be ``IN-PROGRESS``, ``SUCCESS``, or ``FAILED``.
