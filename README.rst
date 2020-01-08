@@ -28,7 +28,7 @@ are several ways to use it:
       [default]
       API_KEY = your_api_key
       
-  Users with Windows can follow the steps below:
+  Users with Windows can follow the steps below in the Command Prompt:
    a) cd %UserProfile%
    b) mkdir .quantopian
    c) cd .quantopian
