@@ -32,7 +32,7 @@ are several ways to use it:
    a) cd %UserProfile%
    b) mkdir .quantopian
    c) cd .quantopian
-   d) echo [default] > credentials && echo API_KEY = 'enter your api key here inside single quotes' >> credentials
+   d) echo [default] >> credentials && echo API_KEY = 'enter your api key here inside single quotes' >> credentials
 
 2) Use an environment variable: set ``QUANTOPIAN_API_KEY`` to your API key.
 
