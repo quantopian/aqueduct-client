@@ -52,6 +52,8 @@ class AqueductClient(object):
     def __init__(self, api_key, base_url):
         self._base_url = base_url
         self._api_key = api_key
+        self._session = requests.Session()
+        self._session.headers = {'Quantopian-API-Key': self._api_key}
 
     def get_all_pipeline_executions(self):
         """
@@ -295,14 +297,12 @@ class AqueductClient(object):
         return response.json()
 
     def _get(self, path):
-        return requests.get(
+        return self._session.get(
             self._base_url + path,
-            headers={'Quantopian-API-Key': self._api_key},
         )
 
     def _post(self, path, body):
-        return requests.post(
+        return self._session.post(
             self._base_url + path,
-            headers={'Quantopian-API-Key': self._api_key},
             json=body,
         )
