@@ -27,6 +27,12 @@ are several ways to use it:
 
       [default]
       API_KEY = your_api_key
+      
+  Users with Windows can follow the steps below in the Command Prompt:
+   a) cd %UserProfile%
+   b) mkdir .quantopian
+   c) cd .quantopian
+   d) echo [default] >> credentials && echo API_KEY = 'enter your api key here inside single quotes' >> credentials
 
 2) Use an environment variable: set ``QUANTOPIAN_API_KEY`` to your API key.
 
@@ -43,8 +49,10 @@ To use ``AqueductClient``, create an instance. In this case, we are loading cred
 .. code-block:: python
 
   from aqueduct_client import create_client
-
-  client = create_client()
+  from aqueduct_client.utils import load_api_key
+  
+  API_KEY = load_api_key()
+  client = create_client(API_KEY)
 
 To run a new pipeline execution, use ``submit_pipeline_execution``.  Required parameters are ``code`` (string), ``start_date`` and ``end_date`` (date-like strings, dates, or Pandas timestamps).  Optional parameters are  ``name`` (string), ``params`` (a dict of parameters to pass to your pipeline), and ``asset_identifier_format`` (which can be "symbol", "sid", and "fsym_region_id").  ``submit_pipeline_execution`` returns an id, which you can pass to ``get_pipeline_execution`` to monitor this pipeline's execution status.
 
