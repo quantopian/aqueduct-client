@@ -7,10 +7,14 @@ import json
 
 import pandas as pd
 import requests
+import time
 
 from .utils import (
     load_api_key,
     normalize_date_input,
+    construct_returns_data_code,
+    backshift_returns_series,
+    generate_period_name
 )
 
 from .errors import ConcurrentExecutionsExceeded
@@ -138,7 +142,8 @@ class AqueductClient(object):
                                   end_date,
                                   name=None,
                                   params=None,
-                                  asset_identifier_format="sid"):
+                                  asset_identifier_format="sid",
+                                  skip_display=False,):
         """
         Creates and queues a new pipeline execution.
 
@@ -306,3 +311,86 @@ class AqueductClient(object):
             self._base_url + path,
             json=body,
         )
+
+    def get_returns_data(self, execution_id, factor_name, periods, domain_str):
+        print("1/4: Loading {factor_name} data".format(factor_name=factor_name))
+        df = self.get_pipeline_results_dataframe(execution_id)
+        factor_data = df[factor_name]
+
+        returns_pipeline_code = construct_returns_data_code(factor_data, periods, domain_str)
+
+        periods = sorted(periods)
+        sessions = factor_data.index.levels[0]
+        
+        print("2/4: Triggering pipeline run to calculate returns")
+        # ship this pipeline off to AQ to run
+
+        args = {
+            "code": returns_pipeline_code,
+            "start_date": sessions[0].strftime("%Y-%m-%d"),
+            "end_date": sessions[-1].strftime("%Y-%m-%d"),
+            "domain_str": domain_str,
+            "periods": json.dumps(periods),
+        }
+
+        response = self._post('/returns_calculation', args)
+
+        if response.status_code == 429:
+            # concurrent execution quota exceeded
+            data = json.loads(response.text)
+            raise ConcurrentExecutionsExceeded(
+                data["current"],
+                data["allowed"],
+            )
+        else:
+            response.raise_for_status()
+
+        execution_id = response.json()['pipeline_id']
+
+        # wait until the execution is done.
+        while(True):
+            status = self.get_pipeline_execution(execution_id)["status"]
+            if status == "SUCCESS":
+                break
+            elif status == "FAILED":
+                print("There was an error getting the returns data.")
+                return
+
+            time.sleep(5)
+
+        print("3/4: Loading raw returns")
+
+        # get the raw returns data from s3
+        result_df = self.get_pipeline_results_dataframe(execution_id)
+
+        print("4/4: Backshifting and combining returns")
+
+        # backshift each returns series by 1 day more than the desired period, in
+        # order to get forward returns
+        backshifted_returns_dict = {
+            period: backshift_returns_series(
+                result_df[generate_period_name(period)],
+                period + 1
+            ) for period in periods
+        }
+
+        # the backshifted_returns series all have the same assets, but have
+        # different dates. reindex all of the series against the max_period
+        # series' date index, which matches the factor's dates. This makes
+        # the subsequent concatenation much faster.
+        target_series = backshifted_returns_dict[periods[-1]]
+        for period in periods[:-1]:
+            backshifted_returns_dict[period] = \
+                backshifted_returns_dict[period].reindex(target_series.index)
+
+        # now that everything has the same assets and dates, assemble it all
+        # together.
+        returns_df = pd.concat(
+            [backshifted_returns_dict[period] for period in periods],
+            axis=1,
+        )
+        returns_df.columns = [generate_period_name(period) for period in periods]
+        returns_df.index.levels[0].name = "date"
+        returns_df.index.levels[1].name = "asset"
+
+        return returns_df
