@@ -384,16 +384,11 @@ class AqueductClient(object):
         }
 
         # the backshifted_returns series all have the same assets, but have
-        # different dates. cut down each series to the desired date range. This
-        # makes the subsequent concatenation much faster.
+        # different dates. we want to cut down each series to the desired date
+        # range to make subsequent concatenation much faster.
         for period in periods[:-1]:
             backshifted_returns_dict[period] = \
                 backshifted_returns_dict[period][sessions[0]: sessions[-1]]
-
-        # target_series = backshifted_returns_dict[periods[-1]]
-        # for period in periods[:-1]:
-        #     backshifted_returns_dict[period] = \
-        #         backshifted_returns_dict[period].reindex(target_series.index)
 
         # now that everything has the same assets and dates, assemble it all
         # together.

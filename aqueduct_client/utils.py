@@ -159,4 +159,7 @@ def backshift_returns_series(series, observation_count):
         names=ix.names,
     )
 
-    return pd.Series(data=new_values, index=new_index)
+    new_series = pd.Series(data=new_values, index=new_index)
+    new_series.sort_index(level=series.index.names, inplace=True)
+
+    return new_series
