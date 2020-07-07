@@ -313,11 +313,17 @@ class AqueductClient(object):
         )
 
     def get_returns_data(self, execution_id, factor_name, periods, domain_str):
-        print("1/4: Loading {factor_name} data".format(factor_name=factor_name))
+        print("1/4: Loading {factor_name} data".format(
+            factor_name=factor_name
+        ))
         df = self.get_pipeline_results_dataframe(execution_id)
         factor_data = df[factor_name]
 
-        returns_pipeline_code = construct_returns_data_code(factor_data, periods, domain_str)
+        returns_pipeline_code = construct_returns_data_code(
+            factor_data,
+            periods,
+            domain_str
+        )
 
         periods = sorted(periods)
         sessions = factor_data.index.levels[0]
@@ -345,11 +351,14 @@ class AqueductClient(object):
         else:
             response.raise_for_status()
 
-        execution_id = response.json()['pipeline_id']
+        returns_execution_id = response.json()['pipeline_id']
 
         # wait until the execution is done.
         while(True):
-            status = self.get_pipeline_execution(execution_id)["status"]
+            status = self.get_pipeline_execution(
+                returns_execution_id
+            )["status"]
+
             if status == "SUCCESS":
                 break
             elif status == "FAILED":
@@ -365,8 +374,8 @@ class AqueductClient(object):
 
         print("4/4: Backshifting and combining returns")
 
-        # backshift each returns series by 1 day more than the desired period, in
-        # order to get forward returns
+        # backshift each returns series by 1 day more than the desired
+        # period, in order to get forward returns
         backshifted_returns_dict = {
             period: backshift_returns_series(
                 result_df[generate_period_name(period)],
@@ -375,13 +384,16 @@ class AqueductClient(object):
         }
 
         # the backshifted_returns series all have the same assets, but have
-        # different dates. reindex all of the series against the max_period
-        # series' date index, which matches the factor's dates. This makes
-        # the subsequent concatenation much faster.
-        target_series = backshifted_returns_dict[periods[-1]]
+        # different dates. cut down each series to the desired date range. This
+        # makes the subsequent concatenation much faster.
         for period in periods[:-1]:
             backshifted_returns_dict[period] = \
-                backshifted_returns_dict[period].reindex(target_series.index)
+                backshifted_returns_dict[period][sessions[0]: sessions[-1]]
+
+        # target_series = backshifted_returns_dict[periods[-1]]
+        # for period in periods[:-1]:
+        #     backshifted_returns_dict[period] = \
+        #         backshifted_returns_dict[period].reindex(target_series.index)
 
         # now that everything has the same assets and dates, assemble it all
         # together.
@@ -389,7 +401,9 @@ class AqueductClient(object):
             [backshifted_returns_dict[period] for period in periods],
             axis=1,
         )
-        returns_df.columns = [generate_period_name(period) for period in periods]
+        returns_df.columns = [
+            generate_period_name(period) for period in periods
+        ]
         returns_df.index.levels[0].name = "date"
         returns_df.index.levels[1].name = "asset"
 
